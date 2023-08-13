@@ -1,3 +1,3 @@
 module.exports = {
-  getStuff: () => 'stuff rom another-file.js'
+  getStuff: () => 'stuff from another-file.js'
 }
