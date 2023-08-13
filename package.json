@@ -1,12 +1,15 @@
 {
   "name": "async-require-example",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "an oversimplified example of converting require to async",
+  "main": "src/run-example.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./src/run-example.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "Eric Haynes",
+  "license": "ISC",
+  "dependencies": {
+    "esprima": "^4.0.1",
+    "node-fetch-commonjs": "^3.3.1"
+  }
 }
