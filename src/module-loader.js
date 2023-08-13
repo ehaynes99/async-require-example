@@ -12,14 +12,12 @@ const getRequires = (content) => {
   let token = iterator.next()
   while (!token.done) {
     if (token.value.type === 'Identifier' && token.value.value === 'require') {
+      iterator.next() // skip '('
       token = iterator.next()
-      if (token.value.type === 'Punctuator' && token.value.value === '(') {
-        token = iterator.next()
-        if (token.value.type !== 'String') {
-          throw new TypeError(`Could not load file. Non-static require: ${token.value.type} ${token.value}`)
-        }
-        requires.push(token.value.value.slice(1, -1))
+      if (token.value.type !== 'String') {
+        throw new TypeError(`Could not load file. Non-static require: ${token.value.type} ${token.value}`)
       }
+      requires.push(token.value.value.slice(1, -1))
     }
     token = iterator.next()
   }
@@ -29,22 +27,18 @@ const getRequires = (content) => {
 const loadFile = async (relPath) => {
   const url = new URL(relPath, BASE_URL).toString()
   const response = await fetch(url)
-  if (!response.ok) {
-    console.error('error downloading:', url)
-  }
   const source = await response.text()
-  const requires = getRequires(source)
   const requireCache = {}
   await Promise.all(
-    requires.map(async (file) => {
+    getRequires(source).map(async (file) => {
       requireCache[file] = await loadFile(file)
     }),
   )
-  const globals = { module: {}, require: (file) => requireCache[file]}
-  with(globals) {
+  let module = {}
+  with({ module, require: (file) => requireCache[file]}) {
     eval(source)
   }
-  return globals.module.exports
+  return module.exports
 }
 
 module.exports = {
