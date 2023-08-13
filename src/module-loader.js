@@ -2,7 +2,7 @@ const { tokenize } = require('esprima')
 const fetch = require('node-fetch-commonjs')
 
 const BASE_URL =
-  'https://gist.githubusercontent.com/ehaynes99/79cfbf2250a2a0546008dbfa23faa041/raw/d7ebd9d7f9c7e3f472ff5d6ed75c1e8c9da8954c/'
+  'https://raw.githubusercontent.com/ehaynes99/async-require-example/master/example-sources/'
 
 const getRequires = (content) => {
   const tokens = tokenize(content)
@@ -18,8 +18,7 @@ const getRequires = (content) => {
         if (token.value.type !== 'String') {
           throw new TypeError(`Could not load file. Non-static require: ${token.value.type} ${token.value}`)
         }
-        console.log('token', token.value.value)
-        requires.push(token.value.value)
+        requires.push(token.value.value.slice(1, -1))
       }
     }
     token = iterator.next()
@@ -29,10 +28,11 @@ const getRequires = (content) => {
 
 const loadFile = async (relPath) => {
   const url = new URL(relPath, BASE_URL).toString()
-  console.log('file:', relPath, url)
   const response = await fetch(url)
+  if (!response.ok) {
+    console.error('error downloading:', url)
+  }
   const source = await response.text()
-  console.log(relPath, source)
   const requires = getRequires(source)
   const requireCache = {}
   await Promise.all(
@@ -40,11 +40,11 @@ const loadFile = async (relPath) => {
       requireCache[file] = await loadFile(file)
     }),
   )
-  let module
-  with({ require: (file) => requireCache[file] }) {
-    module = eval(source)
+  const globals = { module: {}, require: (file) => requireCache[file]}
+  with(globals) {
+    eval(source)
   }
-  return module.exports
+  return globals.module.exports
 }
 
 module.exports = {
